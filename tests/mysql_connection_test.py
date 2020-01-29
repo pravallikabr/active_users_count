@@ -9,18 +9,19 @@ class TestMain(unittest.TestCase):
         THIS_DIR = os.path.dirname(os.path.abspath(__file__))
         agrt = os.path.join(THIS_DIR, './resources/final_agrt.csv')
         cls.final_agrt_df = pd.read_csv(agrt)
+        cls.db = 'test_db'
 
     def test_mysql_connection(self):
-        result = connect_mysql()
+        result = connect_mysql(self.db)
         self.assertNotEqual(result,None,"mysql not configured or not up!")
 
     def test_connect_mysql_table_exist(self):
-        engine = connect_mysql()
-        result = engine.dialect.has_table(engine, 'users')
+        engine = connect_mysql(self.db)
+        result = engine.dialect.has_table(engine, 'active_user_count')
         self.assertTrue(result,"No table exist!")
 
     def test_to_mysql_db(self):
-        result = to_mysql_db(self.final_agrt_df,'test_db')
+        result = to_mysql_db(self.final_agrt_df,self.db)
         self.assertTrue(result,"No table exist!")
 
 if __name__ == '__main__':
