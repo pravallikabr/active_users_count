@@ -1,5 +1,5 @@
 """
-This  program runs on JSON data filters and aggregate to get the user count by date.
+This  program runs on JSON data filters nad agrt to get the user count by date.
 command:
 
     python3.6 agrt_push_to_sql(input_location)
@@ -23,10 +23,10 @@ def read_json_to_df(location: str):
         if len(src_excel_files) > 0:
             return pd.concat(pd.read_json(f, lines=True) for f in src_excel_files)
         else:
-            print('No Excel files in input folder, kindly upload and rerun from project folder!')
+            print('No Json files in input folder, kindly upload and rerun from project folder!')
             sys.exit()
     except Exception as e:
-        print("kindly place EXCEL files in input folder and try again!")
+        print("kindly place Json files in input folder and try again!")
         sys.exit()
 
 
@@ -67,9 +67,9 @@ def join_groupby_df(user_engagement_df,active_user_filter):
     :return:DataFrame
     """
     join_df =  pd.merge(user_engagement_df, active_user_filter, left_index=True, right_on=0)
-    return  join_df.groupby(['event_date']).size().reset_index(name='user_count')
+    return  join_df.groupby(['event_date']).size().reset_index(name='active_user_count')
 
-def filter_agrt_push_rec_mysql(input_location,db='presentation_db'):
+def filter_agrt_push_rec_mysql(input_location,db):
     """
     this function calls all the function which putputs final result
     joins to dataframe and aggrigates to get user count per day
@@ -82,6 +82,8 @@ def filter_agrt_push_rec_mysql(input_location,db='presentation_db'):
     df          = join_groupby_df(user_eng_df,df)
     to_mysql_db(df,db)
     query_mysql(db)
+    if not db:
+        print('ACTIVE USER COUNT BY DATE' , '\n' , df)
     print("Success!")
 
 def to_mysql_db(df,db):
@@ -90,58 +92,61 @@ def to_mysql_db(df,db):
     :param dataframe:
     :return msg:
     """
-    try:
-        engine = connect_mysql(db)
-        df.to_sql(name='users', con=engine, if_exists = 'append', index=False)
-        engine.close()
-        return True
-    except Exception as e:
-        print(f"Exception MySQL db {e}")
-        print(df)
-        sys.exit()
+    if db:
+        try:
+            engine = connect_mysql(db)
+            df.to_sql(name='active_user_count', con=engine, if_exists = 'append', index=False)
+            engine.close()
+            return True
+        except Exception as e:
+            print(f"Exception MySQL db {e}")
+            print(df)
+            sys.exit()
 
 def query_mysql(db):
     """
     this function connects to docker container mysql and queries users table
     :return:Tabular format data
     """
-    try:
-        sql_select_Query = "select * from users"
-        engine = connect_mysql(db)
-        result = engine.execute(sql_select_Query)
-        print(tabulate(result.fetchall(), headers=['event_date', 'user_count'], tablefmt='psql'))
-        return True
-    except Exception as e:
-        print(f"Error connecting MySQL db {e}")
+    if db:
+        try:
 
-def connect_mysql(database=None):
+            sql_select_Query = "select * from active_user_count"
+            engine = connect_mysql(db)
+            result = engine.execute(sql_select_Query)
+            print(tabulate(result.fetchall(), headers=['event_date', 'active_user_count'], tablefmt='psql'))
+            return True
+        except Exception as e:
+            print(f"Error connecting MySQL db {e}")
+
+def connect_mysql(database):
     """
     this function connects to docker container mysql
     """
-    try:
-        if not database:
-            database = 'test_db'
-        config = {
-            'host': 'localhost',
-            'port': 3306,
-            'user': 'newuser',
-            'password': 'newpassword',
-            'database': f'{database}'
-        }
-        db_user = config.get('user')
-        db_pwd = config.get('password')
-        db_host = config.get('host')
-        db_port = config.get('port')
-        db_name = config.get('database')
-        connection_str = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/{db_name}'
-        engine = db.create_engine(connection_str)
-        return engine.connect()
-    except Exception as e:
-        print("Error connecting MySQL db", e)
+    if database:
+        try:
 
+            config = {
+                'host': 'localhost',
+                'port': 3306,
+                'user': 'newuser',
+                'password': 'newpassword',
+                'database': f'{database}'
+            }
+            db_user = config.get('user')
+            db_pwd = config.get('password')
+            db_host = config.get('host')
+            db_port = config.get('port')
+            db_name = config.get('database')
+            connection_str = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/{db_name}'
+            engine = db.create_engine(connection_str)
+            return engine.connect()
+        except Exception as e:
+            print("Error connecting MySQL db", e)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='DataTest')
     parser.add_argument('--input_location', required=False, default='./input/')
+    parser.add_argument('--db', required=False, default=None)
     args = vars(parser.parse_args())
-    filter_agrt_push_rec_mysql(args['input_location'])
+    filter_agrt_push_rec_mysql(args['input_location'],args['db'])

@@ -1,11 +1,12 @@
 # Semistructured-Json-events-Python-pandas-DF-Mysql(DOCKER)
 
-DESC: Using this REPO By executing below commands will turn semistructured json into pandas dataframe and it pushes it to MYSQL database which is built as part of this usecase to DEMO and as part of it it will even query that mysql db at the succesfull job.
+DESC: By executing below commands, will turn semistructured json into pandas dataframe 
+and it pushes it to MYSQL database which is built as part of this usecase to DEMO and as part of it, it will query that mysql db at the succesfull job.
 
-* NOTE: If no Docker and just want to try script, still can be executed which gives the output and also throws exception as NO SQL DB AVAILABLE.
-If docker and mysql approach is not used, please ignore tests failing on json_mysql_test.py
+* NOTE: If Docker is not available then just run python program for output by following below mentioned commands.
+
 ### Prerequisites
-#### Python 3.6.* & Docker
+#### Python 3.6.* & Docker & GNU make
 
 See installation instructions at: https://www.python.org/downloads/
 
@@ -63,9 +64,9 @@ pip install -r requirements.txt
 
 #### INPUT
 
-Json files are expected to be placed in this folder
+Json files are expected to be placed in input folder
 
-#### Running make command to build and bring up the docker (if no make available please execute below commands manually in teminal under make docker-build) )
+#### Running make command to build and bring up the docker (if no make available please execute below commands manually in terminal using commands under make docker-build) )
 ```
 make docker-build
 ```
@@ -74,23 +75,32 @@ docker build ./ -t mysql-dbc
 docker run --env="MYSQL_ROOT_PASSWORD=root_password" -p 3306:3306 -d mysql-dbc
 ```
 
-#### Running tests to ensure everything is working correctly
+#### Running tests and main program using 
+
+#### docker(MYSQL LOCAL DATABASE) 
+
+```bash
+make RUN-WITH-MYSQL
 ```
-pytest ./tests/
+```windows
+make WIN-RUN-WITH-MYSQL
 ```
 
-#### Execution of main program
+#### without docker just runs main program which aggregates and prints on stdout after succesful test and main execution
 
-Parquet file will be generated with *.parquet extension in this folder once below command is executed.
+```bash
+make RUN
 ```
-python ./main/
+```windows
+make WIN-RUN
 ```
 
 #### Schedulling 
-This can be Scheduled in unix(crontab) box 
+This can be Scheduled in unix(crontab) box following a script which activates virtual environment, pulling dependencies and executing above make commands 
 
-#### Orther Approaches  
+#### Other Approaches  
 
-If going with on premise better go with pyspark and HDFS to do parallel Processing.
+If going with on premise better go with pyspark and HDFS to do parallel Processing if expecting more volume.
 
-If choose to serverless with cloud technologies like AWS, etc. which in that case can be do  processing using lambda to filter and get the required semi structured data into S3 and at the EOD trigger a (EC2, Fargate, or AWS GLUE) etl job which aggregate and push to sql database.
+If we want to go with serverless we can use cloud technologies like AWS, etc. which in that case can do event streaming when arrived using lambda to filter 
+and get the required user_engagement and make them structured data into S3 and at the EOD trigger a (EC2, Fargate, or AWS GLUE) etl job which aggregate and push to sql database.
