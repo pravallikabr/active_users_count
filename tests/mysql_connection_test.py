@@ -17,7 +17,7 @@ class TestMain(unittest.TestCase):
 
     def test_connect_mysql_table_exist(self):
         engine = connect_mysql(self.db)
-        result = engine.dialect.has_table(engine, 'active_user_count')
+        result = engine.dialect.has_table(engine, 'active_user_table')
         self.assertTrue(result,"No table exist!")
 
     def test_to_mysql_db(self):
